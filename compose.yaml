@@ -1,0 +1,29 @@
+services:
+  scan-to-email:
+    build: .
+    container_name: scan-to-email
+    restart: unless-stopped
+    init: true
+    user: "${PUID:?Set PUID in .env}:${PGID:?Set PGID in .env}"
+    env_file:
+      - .env
+    environment:
+      TZ: "${TZ:-Europe/Warsaw}"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - "${NAS_SCAN_ROOT:?Set NAS_SCAN_ROOT in .env}:/data:rw"
+      - "${NAS_STATE_DIR:?Set NAS_STATE_DIR in .env}:/state:rw"
+      - "./config/config.yaml:/app/config/config.yaml:ro"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

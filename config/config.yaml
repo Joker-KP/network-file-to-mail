@@ -1,0 +1,42 @@
+# Configuration for the scan-to-email service (UTF-8).
+# Update the sender address, recipients, and paths as needed.
+version: 1
+
+polling:
+  interval_seconds: 30       # how often to check the directories
+  min_file_age_seconds: 60   # minimum time since the last file modification
+  stable_observations: 2     # consecutive checks with no file changes
+  max_attachment_mb: 18      # size limit for a single attachment (MiB)
+  extensions: [".pdf", ".jpg", ".jpeg", ".png", ".tif", ".tiff"]
+
+smtp:
+  host: smtp.fastmail.com
+  port: 465
+  security: ssl             # ssl (e.g. 465) or starttls (e.g. 587)
+  username_env: SMTP_USERNAME
+  password_env: SMTP_PASSWORD
+  from_address: scanner@example.com
+  from_name: "Brother Scanner"
+  timeout_seconds: 30
+
+message:
+  subject: "Brother scan [{route}]: {filename}"
+  body: |
+    The scanned document is attached: {filename}
+
+    This message was sent automatically by the NAS.
+
+routes:
+  - id: konto1
+    inbox: /data/konto1/inbox
+    archive: /data/konto1/archive
+    to:
+      - recipient1@example.com
+
+  - id: konto2
+    inbox: /data/konto2/inbox
+    archive: /data/konto2/archive
+    to:
+      - recipient2@example.com
+    # Optional subject override for the second profile:
+    # subject: "Second scanner: {filename}"
