@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import signal
 import sys
 import threading
@@ -14,9 +15,9 @@ from .service import ScanMailer
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Scan to email (Synology/Docker)")
-    parser.add_argument("--config", type=Path, default=Path("config/config.yaml"))
-    parser.add_argument("--state-dir", type=Path, default=Path("/state"))
-    parser.add_argument("--check-config", action="store_true", help="Validate YAML and SMTP environment variables without starting the service")
+    parser.add_argument("--config", type=Path, default=Path(os.environ.get("SCANMAIL_CONFIG", "config/config.yaml")))
+    parser.add_argument("--state-dir", type=Path, default=Path(os.environ.get("SCANMAIL_STATE_DIR", "/state")))
+    parser.add_argument("--check-config", action="store_true", help="Validate YAML, including SMTP settings, without starting the service")
     args = parser.parse_args()
     logging.basicConfig(
         level=logging.INFO,
@@ -26,7 +27,7 @@ def main() -> int:
     try:
         config = load_config(args.config)
         if args.check_config:
-            print("OK: YAML, SMTP credential presence, and profiles are valid. SMTP connectivity was not tested.")
+            print("OK: YAML, SMTP settings, and profiles are valid. SMTP connectivity was not tested.")
             for route in config.routes:
                 print(f"  {route.id}: {route.inbox} -> {', '.join(route.to)} -> {route.archive}")
             return 0

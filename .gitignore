@@ -1,4 +1,5 @@
 .env
+config/local.yaml
 *.db
 *.db-shm
 *.db-wal
@@ -7,5 +8,6 @@ __pycache__/
 .pytest_cache/
 .venv/
 data/
+state/
 *.log
 .DS_Store

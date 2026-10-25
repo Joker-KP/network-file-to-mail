@@ -18,7 +18,7 @@ class TestScanMailer(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.routes = []
-        for name in ("konto1", "konto2"):
+        for name in ("account1", "account2"):
             inbox = self.root / name / "inbox"
             inbox.mkdir(parents=True)
             archive = self.root / name / "archive"
@@ -50,8 +50,8 @@ class TestScanMailer(unittest.TestCase):
         with patch("scanmail.service.send_email") as mock_send:
             self.ready_scan()
             self.assertEqual(mock_send.call_count, 2)
-            self.assertEqual(mock_send.call_args_list[0].args[2], ("konto1@example.com",))
-            self.assertEqual(mock_send.call_args_list[1].args[2], ("konto2@example.com",))
+            self.assertEqual(mock_send.call_args_list[0].args[2], ("account1@example.com",))
+            self.assertEqual(mock_send.call_args_list[1].args[2], ("account2@example.com",))
         self.assertTrue((self.routes[0].archive / "scanA.pdf").exists())
         self.assertTrue((self.routes[1].archive / "scanB.pdf").exists())
         self.assertFalse((self.routes[0].inbox / "scanA.pdf").exists())
@@ -131,8 +131,8 @@ class TestScanMailer(unittest.TestCase):
 
     def test_message_has_correct_attachment_and_subject(self):
         msg = build_message(self.config, self.routes[0], "a.pdf", b"pdf-content")
-        self.assertEqual(msg["Subject"], "Scan konto1: a.pdf")
-        self.assertEqual(msg["To"], "konto1@example.com")
+        self.assertEqual(msg["Subject"], "Scan account1: a.pdf")
+        self.assertEqual(msg["To"], "account1@example.com")
         self.assertEqual(msg.iter_attachments().__next__().get_content(), b"pdf-content")
 
 

@@ -1,6 +1,6 @@
 # Project review
 
-Reviewed on 2026-10-25. Scope: configuration validation, SMTP submission, the SQLite ledger, archive handling, container configuration, documentation, and the existing tests. This review records implementation findings; the translation does not change sending or archiving logic.
+Reviewed on 2026-10-25; deployment documentation updated on 2026-10-26. Scope: configuration validation, SMTP submission, the SQLite ledger, archive handling, container configuration, documentation, and the existing tests. The open findings below concern sending and archiving logic, which the configuration and deployment changes do not alter.
 
 ## Open findings
 
@@ -44,19 +44,19 @@ Confirmed with a mock SMTP session where `send_message` returned an empty reject
 
 Recommended follow-up: distinguish successful message acceptance from session cleanup errors so a failed `QUIT` does not discard known acceptance. Add a regression test. The documented crash window and partial-recipient acceptance limitations still apply.
 
-## Documentation changes
+## Configuration and deployment update (2026-10-26)
 
-- Translated the README, agent instructions, configuration comments, environment example, Compose diagnostics, CLI help, validation errors, logs, sample messages, and test fixture text into English.
-- Preserved route IDs, directory paths, configuration keys, and environment variable names.
-- Changed the documented Compose validation command to `docker compose config --quiet` so it does not print expanded environment credentials.
-- Clarified persistent state, partial recipient acceptance, the attachment limit's MiB units, and local environment loading.
-- Replaced native Windows development instructions with Linux/WSL guidance because the worker imports `fcntl`.
+- Renamed the supplied route IDs and directories to `account1` and `account2`.
+- Moved SMTP username and password into the private runtime YAML alongside all other SMTP settings. Environment-based credentials are no longer supported.
+- Excluded configuration from the Docker build context, hid passwords from configuration representations, and suppressed YAML parser excerpts that could expose credentials.
+- Added a standalone image entrypoint that drops privileges according to `PUID`/`PGID`, with Dockerfile defaults for identity, timezone, and runtime paths.
+- Removed the Compose and `.env` templates. The README now describes image build/export, Container Manager environment and volume settings, and equivalent standalone Docker commands.
+- Documented migration precautions because route IDs and source paths participate in delivery identity. Existing ledger records and NAS directories are not migrated automatically.
 
 ## Validation
 
-- All 12 existing unit tests passed before and after translation, using Python 3.14.4 (`python3 -m unittest discover -s tests -v`).
-- Four temporary probes confirmed the implementation findings above; they characterize current flaws rather than fixes.
-- Validated the supplied YAML and CLI configuration check using dummy SMTP credentials, without a network connection.
-- Validated Docker Compose using an isolated copy of `.env.example`; no real credentials were read or printed.
-- Compared Python syntax trees with string literals normalized to confirm that only text changed in the Python files.
-- No live SMTP submission, container deployment, NAS test, or power-loss test was performed. The container's Python 3.12 runtime was not exercised.
+- All 24 unit tests pass using Python 3.14.4 and inside the built Python 3.12 image, including YAML-only credentials, secret handling, CLI/environment path precedence, privilege dropping, entrypoint execution, and the existing sending/archiving regression tests.
+- Built `scan-to-email:codex-check` and verified image defaults, the default entrypoint, no baked-in YAML, no SMTP environment settings, and no exposed ports.
+- Smoke-tested configuration validation and worker startup with networking disabled and disposable mounts. Custom `PUID`/`PGID` produced correctly owned SQLite state; SIGTERM stopped the worker cleanly. The image also supplied the configured timezone.
+- Four temporary probes on 2026-10-25 confirmed the open implementation findings above; they characterize current flaws rather than fixes.
+- No live SMTP submission, NAS deployment, or power-loss test was performed.

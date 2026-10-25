@@ -1,5 +1,6 @@
 # Configuration for the scan-to-email service (UTF-8).
-# Update the sender address, recipients, and paths as needed.
+# Copy to a private runtime file; update SMTP credentials, addresses, and paths.
+# Never commit real credentials or include the runtime file in an image.
 version: 1
 
 polling:
@@ -13,8 +14,8 @@ smtp:
   host: smtp.fastmail.com
   port: 465
   security: ssl             # ssl (e.g. 465) or starttls (e.g. 587)
-  username_env: SMTP_USERNAME
-  password_env: SMTP_PASSWORD
+  username: scanner@example.com
+  password: "REPLACE_WITH_SMTP_APP_PASSWORD"
   from_address: scanner@example.com
   from_name: "Brother Scanner"
   timeout_seconds: 30
@@ -27,15 +28,15 @@ message:
     This message was sent automatically by the NAS.
 
 routes:
-  - id: konto1
-    inbox: /data/konto1/inbox
-    archive: /data/konto1/archive
+  - id: account1
+    inbox: /data/account1/inbox
+    archive: /data/account1/archive
     to:
       - recipient1@example.com
 
-  - id: konto2
-    inbox: /data/konto2/inbox
-    archive: /data/konto2/archive
+  - id: account2
+    inbox: /data/account2/inbox
+    archive: /data/account2/archive
     to:
       - recipient2@example.com
     # Optional subject override for the second profile:

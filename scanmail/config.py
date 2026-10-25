@@ -1,9 +1,8 @@
 """Strict, human-editable YAML configuration."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-import os
 import re
 from email.utils import parseaddr
 
@@ -25,7 +24,7 @@ class SMTP:
     port: int
     security: str
     username: str
-    password: str
+    password: str = field(repr=False)
     from_address: str
     from_name: str
     timeout_seconds: int
@@ -82,7 +81,7 @@ def _address(value: object, name: str) -> str:
 def _template(value: object, name: str) -> str:
     template = _string(value, name)
     try:
-        template.format(route="konto1", filename="test.pdf")
+        template.format(route="account1", filename="test.pdf")
     except (KeyError, ValueError, IndexError, AttributeError) as error:
         raise ValueError(f"{name}: allowed variables are {{route}} and {{filename}}: {error}") from error
     if "\n" in template and name.endswith("subject"):
@@ -99,7 +98,12 @@ def _path(value: object, name: str) -> Path:
 
 def load_config(config_path: Path) -> Config:
     with config_path.open("r", encoding="utf-8") as handle:
-        root = _obj(yaml.safe_load(handle), "configuration")
+        try:
+            document = yaml.safe_load(handle)
+        except yaml.YAMLError:
+            # YAML parser diagnostics can include lines containing credentials.
+            raise ValueError("Invalid YAML configuration; check syntax in the configuration file") from None
+        root = _obj(document, "configuration")
     if root.get("version") != 1:
         raise ValueError("Supported configuration version: version: 1")
     poll = _obj(root.get("polling"), "polling")
@@ -124,12 +128,12 @@ def load_config(config_path: Path) -> Config:
     encryption = _string(smtp_obj.get("security"), "smtp.security").lower()
     if encryption not in {"ssl", "starttls"}:
         raise ValueError("smtp.security must be 'ssl' or 'starttls'")
-    username_env = _string(smtp_obj.get("username_env"), "smtp.username_env")
-    password_env = _string(smtp_obj.get("password_env"), "smtp.password_env")
-    username = os.environ.get(username_env, "").strip()
-    password = os.environ.get(password_env, "")
-    if not username or not password:
-        raise ValueError(f"Missing environment variables: {username_env} / {password_env}")
+    if "username_env" in smtp_obj or "password_env" in smtp_obj:
+        raise ValueError("Use smtp.username and smtp.password in YAML; SMTP environment settings are no longer supported")
+    username = _string(smtp_obj.get("username"), "smtp.username")
+    password = smtp_obj.get("password")
+    if not isinstance(password, str) or not password.strip():
+        raise ValueError("smtp.password: expected a nonempty string")
     smtp = SMTP(
         host=_string(smtp_obj.get("host"), "smtp.host"),
         port=_integer(smtp_obj.get("port"), "smtp.port"),
